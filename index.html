@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant Todo List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #5c8d9e;
+        }
+        .todo-item {
+            transition: all 0.3s ease;
+        }
+        .todo-item.completed {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
+        <div class="p-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Todo List</h1>
+            
+            <!-- Input form -->
+            <form id="todoForm" class="flex gap-2 mb-6">
+                <input 
+                    type="text" 
+                    id="todoInput" 
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    placeholder="Add a new task..."
+                >
+                <button 
+                    type="submit" 
+                    class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                    Add
+                </button>
+            </form>
+
+            <!-- Todo list -->
+            <div id="todoList" class="space-y-3">
+                <!-- Todo items will be inserted here -->
+            </div>
+
+            <!-- Status bar -->
+            <div class="mt-6 pt-4 border-t border-gray-200">
+                <p class="text-sm text-gray-600">
+                    <span id="taskCount">0</span> tasks remaining
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const todoForm = document.getElementById('todoForm');
+            const todoInput = document.getElementById('todoInput');
+            const todoList = document.getElementById('todoList');
+            const taskCount = document.getElementById('taskCount');
+            
+            let todos = JSON.parse(localStorage.getItem('todos')) || [];
+
+            function saveTodos() {
+                localStorage.setItem('todos', JSON.stringify(todos));
+            }
+
+            function updateTaskCount() {
+                const remainingTasks = todos.filter(todo => !todo.completed).length;
+                taskCount.textContent = remainingTasks;
+            }
+
+            function createTodoElement(todo) {
+                const div = document.createElement('div');
+                div.className = `todo-item flex items-center gap-3 p-3 bg-gray-50 rounded-lg ${todo.completed ? 'completed' : ''}`;
+                div.dataset.id = todo.id;
+
+                div.innerHTML = `
+                    <input type="checkbox" 
+                        class="w-5 h-5 rounded border-gray-300 focus:ring-blue-500" 
+                        ${todo.completed ? 'checked' : ''}>
+                    <span class="flex-1">${todo.text}</span>
+                    <button class="delete-btn text-red-500 hover:text-red-700">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                `;
+
+                const checkbox = div.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', () => {
+                    todo.completed = checkbox.checked;
+                    div.classList.toggle('completed', todo.completed);
+                    saveTodos();
+                    updateTaskCount();
+                });
+
+                const deleteBtn = div.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', () => {
+                    div.classList.add('shake');
+                    setTimeout(() => {
+                        todos = todos.filter(t => t.id !== todo.id);
+                        div.remove();
+                        saveTodos();
+                        updateTaskCount();
+                    }, 500);
+                });
+
+                return div;
+            }
+
+            function renderTodos() {
+                todoList.innerHTML = '';
+                todos.forEach(todo => {
+                    todoList.appendChild(createTodoElement(todo));
+                });
+                updateTaskCount();
+            }
+
+            todoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const text = todoInput.value.trim();
+                
+                if (text) {
+                    const newTodo = {
+                        id: Date.now(),
+                        text,
+                        completed: false
+                    };
+                    
+                    todos.push(newTodo);
+                    todoList.appendChild(createTodoElement(newTodo));
+                    saveTodos();
+                    updateTaskCount();
+                    
+                    todoInput.value = '';
+                }
+            });
+
+            // Initial render
+            renderTodos();
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
